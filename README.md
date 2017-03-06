@@ -1,6 +1,6 @@
 # P2H-UI
 
-This is the front end interface for a pdf to html service developed on purescript.
+This is the front end interface for a pdf to html service developed in [purescript](http://www.purescript.org/) using PUX
 
 See the [Guide](https://alexmingoia.github.io/purescript-pux) for help learning
 Pux.
