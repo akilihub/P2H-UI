@@ -4,6 +4,7 @@ import Data.Functor ((<$))
 import Data.Maybe (fromMaybe)
 import Prelude (($))
 import Pux.Router (end, router)
+import Prelude
 
 data Route = Home | NotFound
 

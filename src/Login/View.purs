@@ -1,6 +1,6 @@
-module LoginForm.View where
+module Login.View where
 import Data.Tuple (Tuple(..))
-import LoginForm.Types
+import Login.Types
 import Pux.Html (Html, button, div, form, input, label, p, style, text)
 import Pux.Html.Attributes (id_, name, checked, type_, value, className)
 import Pux.Html.Events (onBlur, onChange, onClick, onDoubleClick, onKeyDown, onSubmit)

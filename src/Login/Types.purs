@@ -1,8 +1,10 @@
-module LoginForm.Types where
-import Data.Argonaut (jsonEmptyObject, class EncodeJson, encodeJson, (:=), (~>))
+module Login.Types where
+import Prelude
+import Data.Argonaut (jsonEmptyObject, class EncodeJson, class DecodeJson, encodeJson, decodeJson, (:=), (~>), (.?))
 import Data.Boolean (otherwise)
-import Data.Either (Either)
+import Data.Either (Either(..))
 import Data.Maybe (Maybe)
+import Data.String (length)
 import Pux.Html.Events (FormEvent)
 
 -- Note that the returned payload that shows whether a user is authenticated or not is not handled here
@@ -49,9 +51,9 @@ instance decodeJsonSession :: DecodeJson Session where
     userId <- obj .? "userId"
     pure $ Session { sessionId, userType, userId }
 
-inputValidation :: User -> Either (Error User)
-inputValidation User ( user@{ password, username } )
-  | length password < 4 && length username < 2  = Left "Invalid username and password"
-  | length username < 2 = Left "Invalid username"
-  | length password < 4 = Left "Invalid password"
+inputValidation :: User -> Either Error User
+inputValidation (User user)
+  | length user.password < 4 && length user.username < 2  = Left "Invalid username and password"
+  | length user.username < 2 = Left "Invalid username"
+  | length user.password < 4 = Left "Invalid password"
   | otherwise           = Right (User user)
