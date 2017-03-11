@@ -8,20 +8,32 @@ import Pux.Html.Events (FormEvent)
 -- Note that the returned payload that shows whether a user is authenticated or not is not handled here
 
 data Action
-  = SubmitInput (Either String User)
-  | ValidateInput (Either String User)
-  | AddUsername FormEvent
-  | AddPassword FormEvent
+  = SignIn
+  | ValidateForm
+  | DisplayError
+  | UserNameChange FormEvent
+  | PasswordChange FormEvent
+  | ReceiveUserSession Session
 
 newtype User = User
   { password :: String
   , username :: String
   }
 
+newtype Session = Session
+  { sessionId :: String
+  , userType :: String
+  , userId :: String
+  }
+
+type Error = String
+
 type State =
-    { user :: User
-    , status :: String
-    }
+  { user :: User
+  , error :: Error
+  , status :: String
+  , session :: Session
+  }
 
 instance encodeJsonUser :: EncodeJson User where
   encodeJson (User user)
@@ -29,13 +41,17 @@ instance encodeJsonUser :: EncodeJson User where
     ~> "password" := user.password
     ~> jsonEmptyObject
 
-validateInput :: User -> ValidateInput
-validate User ( user@{password, username} )
-  | length username < 2 = ValidateInput (Left "Missing username")
-  | length password < 2 = ValidateInput (Left "Missing password")
-  | length password < 2 && length password < 2 = ValidateInput (Left "Invalid Input")
-  | otherwise           = ValidateInpit (Right user)
+instance decodeJsonSession :: DecodeJson Session where
+  decodeJson json = do
+    obj <- decodeJson json
+    sessionId <- obj .? "sessionId"
+    userType <- obj .? "userType"
+    userId <- obj .? "userId"
+    pure $ Session { sessionId, userType, userId }
 
-
-submitFormData :: ValidateInput -> SubmitInput
-submitFormData = either (SubmitInput Left) (SubmitInput Right)
+inputValidation :: User -> Either (Error User)
+inputValidation User ( user@{ password, username } )
+  | length password < 4 && length username < 2  = Left "Invalid username and password"
+  | length username < 2 = Left "Invalid username"
+  | length password < 4 = Left "Invalid password"
+  | otherwise           = Right (User user)
