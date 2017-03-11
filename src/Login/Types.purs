@@ -10,9 +10,9 @@ import Pux.Html.Events (FormEvent)
 -- Note that the returned payload that shows whether a user is authenticated or not is not handled here
 
 data Action
-  = SignIn
+  = SignIn User
   | ValidateForm
-  | DisplayError
+  | DisplayError String
   | UserNameChange FormEvent
   | PasswordChange FormEvent
   | ReceiveUserSession Session
@@ -28,11 +28,11 @@ newtype Session = Session
   , userId :: String
   }
 
-type Error = String
+
 
 type State =
   { user :: User
-  , error :: Error
+  , error :: String
   , status :: String
   , session :: Session
   }
@@ -51,7 +51,7 @@ instance decodeJsonSession :: DecodeJson Session where
     userId <- obj .? "userId"
     pure $ Session { sessionId, userType, userId }
 
-inputValidation :: User -> Either Error User
+inputValidation :: User -> Either String User
 inputValidation (User user)
   | length user.password < 4 && length user.username < 2  = Left "Invalid username and password"
   | length user.username < 2 = Left "Invalid username"
