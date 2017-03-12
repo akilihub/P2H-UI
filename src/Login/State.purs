@@ -61,9 +61,6 @@ update (SignIn user) state =
       ]
     }
 
-
-
-
 update (AuthenticateUser session) state =
   { state: state { status = "authenticating user login response"}
   , effects: [ do
