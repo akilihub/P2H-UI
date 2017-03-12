@@ -3,9 +3,10 @@ import Data.Argonaut (jsonEmptyObject, class EncodeJson, class DecodeJson, decod
 import Data.Boolean (otherwise)
 import Data.Either (Either(..))
 import Data.Generic (class Generic, gShow)
+import Data.Maybe (Maybe(..))
 import Data.Show (class Show)
 import Data.String (length)
-import Prelude (bind, (<), ($), pure, (&&))
+import Prelude (bind, (<), ($), pure, (&&), (==), (||))
 import Pux.Html.Events (FormEvent)
 
 
@@ -15,6 +16,7 @@ data Action
   | DisplayError String
   | UserNameChange FormEvent
   | PasswordChange FormEvent
+  | AuthenticateUser Session
   | ReceiveUserSession Session
 
 newtype User = User
@@ -24,9 +26,8 @@ newtype User = User
 
 
 newtype Session = Session
-  { sessionId :: String
-  , userType :: String
-  , userId :: String
+  { sessionId :: Maybe String
+  , userId :: Maybe String
   }
 
 type State =
@@ -58,13 +59,20 @@ instance decodeJsonSession :: DecodeJson Session where
   decodeJson json = do
     obj <- decodeJson json
     sessionId <- obj .? "sessionId"
-    userType <- obj .? "userType"
     userId <- obj .? "userId"
-    pure $ Session { sessionId, userType, userId }
+    pure $ Session { sessionId, userId }
 
+-- we could do more checking here TODO
 inputValidation :: User -> Either String User
 inputValidation (User user)
   | length user.password < 4 && length user.username < 2  = Left "Invalid username and password"
   | length user.username < 2 = Left "Invalid username"
   | length user.password < 4 = Left "Invalid password"
   | otherwise           = Right (User user)
+
+
+-- we could do more checking here
+authenticateSession :: Session -> Action
+authenticateSession (Session session@{sessionId, userId} )
+  | sessionId == Nothing || userId == Nothing  = DisplayError "Wrong login credentials"
+  | otherwise  = ReceiveUserSession (Session session)

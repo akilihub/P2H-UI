@@ -4,8 +4,9 @@ import Control.Monad.Eff.Exception (message)
 import DOM (DOM)
 import Data.Argonaut (decodeJson, encodeJson)
 import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
 import Data.Show (show)
-import Login.Types (Action(..), State, User(..), Session(..), inputValidation)
+import Login.Types (Action(..), Session(..), State, User(..), inputValidation, authenticateSession)
 import Network.HTTP.Affjax (AJAX, post)
 import Prelude (bind, pure, (<>), ($))
 import Pux (EffModel, noEffects)
@@ -19,11 +20,11 @@ init =
   , status : ".."
   , error : ""
   , session : Session {
-                        sessionId : ""
-                      , userType  : ""
-                      , userId    : ""
+                        sessionId : Nothing
+                      , userId    : Nothing
                       }
   }
+
 
 update :: Action -> State -> EffModel State Action (dom :: DOM, ajax :: AJAX)
 
@@ -51,17 +52,27 @@ update (DisplayError err) state = noEffects $
 update (SignIn user) state =
     { state: state { status = "input form submission " <> show user <> "..." }
     , effects: [ do
-        res <- attempt $ post "http://localhost:3001/api/login/" (encodeJson user)
+        res <- attempt $ post "http://localhost:3001/api/login" (encodeJson user)
         case res of
           (Left err)  -> pure $ DisplayError (message err)
           (Right json) -> case decodeJson json.response of
-                          Right session -> pure $ ReceiveUserSession session
+                          Right session -> pure $ AuthenticateUser session
                           Left err -> pure $ DisplayError err
       ]
     }
 
-update (ReceiveUserSession session) state =
+
+
+
+update (AuthenticateUser session) state =
+  { state: state { status = "authenticating user login response"}
+  , effects: [ do
+    pure $ (authenticateSession session)
+    ]
+  }
+
+update (ReceiveUserSession session) state@{user: User {username, password } } =
   noEffects $ { user: state.user
-              , status: "started new session for user:  " <> show state.user
+              , status: "started new session for: " <> username
               , error: state.error
-              , session: state.session }
+              , session: session }
