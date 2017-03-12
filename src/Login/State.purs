@@ -1,23 +1,21 @@
 module Login.State where
-
-import Login.Types
-import Prelude
-import CSS (Display(..), input)
 import Control.Monad.Aff (attempt)
-import Control.MonadPlus (guard)
+import Control.Monad.Eff.Exception (message)
 import DOM (DOM)
-import Data.Foreign.Class (class AsForeign, class IsForeign, readJSON, write)
 import Data.Argonaut (decodeJson, encodeJson)
-import Data.Either (Either(..), either)
+import Data.Either (Either(..))
+import Data.Show (show)
+import Login.Types (Action(..), State, User(..), Session(..), inputValidation)
 import Network.HTTP.Affjax (AJAX, post)
+import Prelude (bind, pure, (<>), ($))
 import Pux (EffModel, noEffects)
-import Pux.Html.Events (FormEvent)
+
 
 init :: State
 init =
-  { user:       User  { password : ""
-                      , username : ""
-                      }
+  { user: User { password : ""
+                , username : ""
+                }
   , status : ".."
   , error : ""
   , session : Session {
@@ -53,12 +51,12 @@ update (DisplayError err) state = noEffects $
 update (SignIn user) state =
     { state: state { status = "input form submission " <> show user <> "..." }
     , effects: [ do
-        res <- attempt $ post "http://localhost:3001/api/posts/" (write user)
-        let decode r = decodeJson r.response :: Either String Session
-        let response = either (Left <<< show) readJSON res
-        case response of
-          (Left err)      -> pure $ DisplayError err
-          (Right session) -> pure $ ReceiveUserSession session
+        res <- attempt $ post "http://localhost:3001/api/login/" (encodeJson user)
+        case res of
+          (Left err)  -> pure $ DisplayError (message err)
+          (Right json) -> case decodeJson json.response of
+                          Right session -> pure $ ReceiveUserSession session
+                          Left err -> pure $ DisplayError err
       ]
     }
 

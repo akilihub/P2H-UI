@@ -1,8 +1,8 @@
 module Login.View where
-import Login.Types(Action(..), State)
+import Login.Types(Action(..), State, User(..))
 import Pux.Html (Html, button,form, input, p, text)
-import Pux.Html.Attributes (id_, name, checked, type_, value, className)
-import Pux.Html.Events (onBlur, onChange, onClick, onDoubleClick, onKeyDown, onSubmit)
+import Pux.Html.Attributes (name, type_, value, className)
+import Pux.Html.Events (onChange, onSubmit)
 import Prelude hiding (div)
 
 
