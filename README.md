@@ -5,6 +5,11 @@ This is the front end interface for a pdf to html service developed in [purescri
 See the [Guide](https://alexmingoia.github.io/purescript-pux) for help learning
 Pux.
 
+## TODO
+- [ ] Add google, facebook SignIn and signup
+- [ ] Allow use of tool without account in trial mode
+- [ ] Serialise state to local storage
+
 ## Installation
 
 ```sh
