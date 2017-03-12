@@ -8,7 +8,7 @@ import Prelude hiding (div)
 
 
 view :: State -> Html Action
-view { user: (User user), status: error} = form
+view { user: (User user), error: error} = form
   [ name "Signin Form"
   , onSubmit (const ValidateForm)
   ]

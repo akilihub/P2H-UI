@@ -1,13 +1,15 @@
 module Login.Types where
-import Prelude
 import Data.Argonaut (jsonEmptyObject, class EncodeJson, class DecodeJson, encodeJson, decodeJson, (:=), (~>), (.?))
 import Data.Boolean (otherwise)
 import Data.Either (Either(..))
+import Data.Foreign.Class (class AsForeign, class IsForeign, read, write)
+import Data.Generic (class Generic, gShow)
+import Data.Foreign.Generic (defaultOptions, readGeneric, toForeignGeneric)
 import Data.Maybe (Maybe)
 import Data.String (length)
 import Pux.Html.Events (FormEvent)
+import Prelude((<))
 
--- Note that the returned payload that shows whether a user is authenticated or not is not handled here
 
 data Action
   = SignIn User
@@ -22,10 +24,11 @@ newtype User = User
   , username :: String
   }
 
+
 newtype Session = Session
-  { sessionId :: String
-  , userType :: String
-  , userId :: String
+  { sessionId :: Maybe String
+  , userType :: Maybe String
+  , userId :: Maybe String
   }
 
 
@@ -36,6 +39,30 @@ type State =
   , status :: String
   , session :: Session
   }
+
+derive instance genericUser :: Generic User
+
+instance showUser :: Show User where
+  show = gShow
+
+derive instance genericSession :: Generic Session
+
+instance showSession :: Show Session where
+  show = gShow
+
+-- reading and writing Json http://www.purescript.org/learn/generic/
+
+instance isForeignSession :: IsForeign Session where
+  read = readGeneric defaultOptions { unwrapNewtypes = true }
+
+instance asForeignRecordSession :: AsForeign Session where
+  write = toForeignGeneric (defaultOptions { unwrapSingleConstructors = true })
+
+instance isForeignUser :: IsForeign User where
+  read = readGeneric defaultOptions { unwrapNewtypes = true }
+
+instance asForeignRecordUser :: AsForeign User where
+  write = toForeignGeneric (defaultOptions { unwrapSingleConstructors = true })
 
 instance encodeJsonUser :: EncodeJson User where
   encodeJson (User user)

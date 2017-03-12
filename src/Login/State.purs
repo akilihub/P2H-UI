@@ -6,6 +6,7 @@ import CSS (Display(..), input)
 import Control.Monad.Aff (attempt)
 import Control.MonadPlus (guard)
 import DOM (DOM)
+import Data.Foreign.Class (class AsForeign, class IsForeign, readJSON, toJSONGeneric)
 import Data.Argonaut (decodeJson, encodeJson)
 import Data.Either (Either(..), either)
 import Network.HTTP.Affjax (AJAX, post)
@@ -46,12 +47,13 @@ update ValidateForm state@{ user: user } =
     ]
   }
 
-update (DisplayError err) state = noEffects $ state { error: err }
+update (DisplayError err) state = noEffects $
+  { user: state.user, status: "Error in form", error: err, session: state.session }
 
 update (SignIn user) state =
     { state: state { status = "input form submission " <> show user <> "..." }
     , effects: [ do
-        res <- attempt $ post $ "http://localhost:3001/api/posts/" (encodeJson user)
+        res <- attempt $ post "http://localhost:3001/api/posts/" (toJSONGeneric user)
         let decode r = decodeJson r.response :: Either String Session
         let response = either (Left <<< show) decode res
         case response of
@@ -61,4 +63,7 @@ update (SignIn user) state =
     }
 
 update (ReceiveUserSession session) state =
-  noEffects $ state {status: "started new session for user:  " <> show state.user, session: session}
+  noEffects $ { user: state.user
+              , status: "started new session for user:  " <> show state.user
+              , error: state.error
+              , session: state.session }
