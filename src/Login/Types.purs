@@ -1,14 +1,16 @@
 module Login.Types where
-import Data.Argonaut (jsonEmptyObject, class EncodeJson, class DecodeJson, encodeJson, decodeJson, (:=), (~>), (.?))
+import Data.Argonaut (jsonEmptyObject, class EncodeJson, class DecodeJson, decodeJson, (:=), (~>), (.?))
 import Data.Boolean (otherwise)
 import Data.Either (Either(..))
-import Data.Foreign.Class (class AsForeign, class IsForeign, read, write)
-import Data.Generic (class Generic, gShow)
+import Data.Foreign.Class (class AsForeign, class IsForeign)
 import Data.Foreign.Generic (defaultOptions, readGeneric, toForeignGeneric)
+import Data.Generic.Rep (class Generic)
+import Data.Generic.Rep.Show (genericShow)
 import Data.Maybe (Maybe)
+import Data.Show (class Show)
 import Data.String (length)
+import Prelude (bind, (<), ($), pure, (&&))
 import Pux.Html.Events (FormEvent)
-import Prelude((<))
 
 
 data Action
@@ -26,9 +28,9 @@ newtype User = User
 
 
 newtype Session = Session
-  { sessionId :: Maybe String
-  , userType :: Maybe String
-  , userId :: Maybe String
+  { sessionId :: String
+  , userType :: String
+  , userId :: String
   }
 
 
@@ -40,29 +42,32 @@ type State =
   , session :: Session
   }
 
-derive instance genericUser :: Generic User
+derive instance genericUser :: Generic User _
 
 instance showUser :: Show User where
-  show = gShow
+  show = genericShow
 
-derive instance genericSession :: Generic Session
+derive instance genericSession :: Generic Session _
 
 instance showSession :: Show Session where
-  show = gShow
+  show = genericShow
 
 -- reading and writing Json http://www.purescript.org/learn/generic/
 
+-- myOptions :: Options
+-- myOptions = defaultOptions
+
 instance isForeignSession :: IsForeign Session where
-  read = readGeneric defaultOptions { unwrapNewtypes = true }
+  read = readGeneric (defaultOptions { unwrapSingleConstructors = true })
 
 instance asForeignRecordSession :: AsForeign Session where
-  write = toForeignGeneric (defaultOptions { unwrapSingleConstructors = true })
+  write = toForeignGeneric defaultOptions
 
 instance isForeignUser :: IsForeign User where
-  read = readGeneric defaultOptions { unwrapNewtypes = true }
+  read = readGeneric defaultOptions
 
 instance asForeignRecordUser :: AsForeign User where
-  write = toForeignGeneric (defaultOptions { unwrapSingleConstructors = true })
+  write = toForeignGeneric defaultOptions
 
 instance encodeJsonUser :: EncodeJson User where
   encodeJson (User user)
