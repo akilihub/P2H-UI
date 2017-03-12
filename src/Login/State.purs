@@ -28,9 +28,9 @@ init =
 
 update :: Action -> State -> EffModel State Action (dom :: DOM, ajax :: AJAX)
 
-update (UserNameChange ev) { user: (User user), session } =
+update (UserNameChange ev) state@{ user: (User user), session } =
   let newUser = User $ user { username = ev.target.value } in
-  noEffects $ { user: newUser, status: "Entering user name", error: "", session: session }
+  noEffects $ state { user = newUser, status = "Entering user name" }
 
 update (PasswordChange ev) { status: status, user: (User user), session} =
     let newUser = User $ user { password = ev.target.value } in
@@ -46,8 +46,8 @@ update ValidateForm state =
     ]
   }
 
-update (DisplayError err) state = noEffects $
-  { user: state.user, status: "Error in form", error: err, session: state.session }
+update (DisplayError err) state =
+  noEffects $ state { status = "Error in form", error = err }
 
 update (SignIn user) state =
     { state: state { status = "input form submission " <> show user <> "..." }
@@ -69,7 +69,7 @@ update (AuthenticateUser session) state =
   }
 
 update (ReceiveUserSession session) state@{user: User {username, password } } =
-  noEffects $ { user: state.user
-              , status: "started new session for: " <> username
-              , error: state.error
-              , session: session }
+  noEffects $ state
+    { status = "started new session for: " <> username
+    , error = ""
+    , session = session }
