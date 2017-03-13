@@ -10,7 +10,7 @@ import Data.Maybe (Maybe(..))
 import Network.HTTP.Affjax (AJAX, get, post)
 import Prelude (bind, ($), (<>), pure, (<<<), show)
 import Pux (EffModel, noEffects)
-import Stage.Types (Action(..), Document(..), Documents, HtmlSnippet(..), State)
+import Stage.Types (Action(..), Document(..), Documents, HtmlSnippet(..), State, getDocumentById)
 
 initDoc :: Document
 initDoc = Document
@@ -70,6 +70,9 @@ update (CommitSnippetEdit snippet) state =
   noEffects $ state { snippets = newsnippets, status = "commited snipt edits"} where
     newsnippets = snoc state.snippets state.activeSnippet
 
+update (SetActiveDocument id) state =
+  noEffects $ state { status = "started doc editing", activeDocument = newActiveDoc }
+    where newActiveDoc = getDocumentById id state.documents
 
 -- | Html snippets / selected sections are passed by a document on select handler in the view
 update SaveDocumentChanges state@{ snippets : snippets } =

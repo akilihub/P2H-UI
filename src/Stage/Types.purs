@@ -43,6 +43,7 @@ data Action
   | CommitSnippetEdit HtmlSnippet
   | SaveDocumentStatus (Either String String)
   | SaveDocumentChanges
+  | SetActiveDocument String
   | GetDocuments
   | RecieveDocuments  (Either String Documents)
   | DisplayError String
