@@ -37,7 +37,6 @@ init =
   , documents : []
   , activeSnippet : initSnippet
   , snippets : []
-  , activeDocumentSections : []
   }
 
 update :: Action -> State -> EffModel State Action (dom :: DOM, ajax :: AJAX)
@@ -74,7 +73,6 @@ update (SetActiveDocument id) state =
   noEffects $ state { status = "started doc editing", activeDocument = newActiveDoc }
     where newActiveDoc = getDocumentById id state.documents
 
--- | Html snippets / selected sections are passed by a document on select handler in the view
 update SaveDocumentChanges state@{ snippets : snippets } =
   { state : state { status = "saving doc "}
   , effects : [ do

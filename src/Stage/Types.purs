@@ -22,10 +22,9 @@ newtype Document = Document
   }
 
 type Documents = Array Document
-type HtmlElementId = String
+type DocumentId = String
 type HtmlText = String
 type HtmlSnippets =  Array HtmlSnippet
-type Pages = Array HtmlElementId
 
 type State =
   { status :: String
@@ -35,7 +34,6 @@ type State =
   , documents :: Documents
   , activeSnippet :: HtmlSnippet
   , snippets :: HtmlSnippets
-  , activeDocumentSections :: Pages
   }
 
 data Action
@@ -43,7 +41,7 @@ data Action
   | CommitSnippetEdit HtmlSnippet
   | SaveDocumentStatus (Either String String)
   | SaveDocumentChanges
-  | SetActiveDocument String
+  | SetActiveDocument DocumentId
   | GetDocuments
   | RecieveDocuments  (Either String Documents)
   | DisplayError String
@@ -65,5 +63,5 @@ instance decodeJsonDocument :: DecodeJson Document where
     publicationStatus <- obj .? "publicationStatus"
     pure $ Document { name, url, id, publicationStatus }
 
-getDocumentById :: String -> Documents -> Maybe Document
+getDocumentById :: DocumentId -> Documents -> Maybe Document
 getDocumentById id = find (\(Document doc) -> doc.id == Just id )
