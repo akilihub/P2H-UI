@@ -6,8 +6,8 @@ See the [Guide](https://alexmingoia.github.io/purescript-pux) for help learning
 Pux.
 
 ## TODO
-- [ ] Add google, facebook SignIn and signup
-- [ ] Allow use of tool without account in trial mode
+- [ ] Add google andfacebook SignIn and signup
+- [ ] Allow use in trial mode without account
 - [ ] Serialise state to local storage
 
 ## Installation
@@ -19,8 +19,7 @@ npm install
 npm start
 ```
 
-Visit `http://localhost:3000` in your browser, edit `src/purs/Layout.purs`
-and watch the magic!
+Visit `http://localhost:3000` in your browser
 
 ## Available scripts
 

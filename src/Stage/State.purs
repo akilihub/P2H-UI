@@ -1,16 +1,16 @@
 module Stage.State where
 
 import Control.Monad.Aff (attempt)
-import Control.Monad.Eff.Exception (Error, message)
 import DOM (DOM)
-import Data.Argonaut (decodeJson)
+import Data.Argonaut (decodeJson, encodeJson)
 import Data.Array (snoc)
 import Data.Either (Either(..), either)
+import Data.Functor (map)
 import Data.Maybe (Maybe(..))
-import Network.HTTP.Affjax (AJAX, get)
-import Prelude (bind, ($), (<>), pure, (<<<), map, show)
+import Network.HTTP.Affjax (AJAX, get, post)
+import Prelude (bind, ($), (<>), pure, (<<<), show)
 import Pux (EffModel, noEffects)
-import Stage.Types (Action(..), Document(..), Documents, State, getDocumentById)
+import Stage.Types (Action(..), Document(..), Documents, HtmlSnippet(..), State)
 
 initDoc :: Document
 initDoc = Document
@@ -20,6 +20,14 @@ initDoc = Document
   , publicationStatus : Nothing
   }
 
+initSnippet :: HtmlSnippet
+initSnippet = HtmlSnippet
+  { id : Nothing
+  , text : Nothing
+  , classes : Nothing
+  , styles : Nothing
+  }
+
 init :: State
 init =
   { status : ".."
@@ -27,7 +35,8 @@ init =
   , activeDocument : Just initDoc
   , error : ""
   , documents : []
-  , sectionsInEditMode : []
+  , activeSnippet : initSnippet
+  , snippets : []
   , activeDocumentSections : []
   }
 
@@ -49,16 +58,38 @@ update (RecieveDocuments (Left err)) state =
       pure $ DisplayError (newStatus <> " : " <> err)
     ]
   } where
-  newStatus =  "error getting documents checking your connected to the internet"
+  newStatus =  "error getting documents check you are connected to the internet"
 
 update (RecieveDocuments (Right documents)) state =
   noEffects $ state { status = "receieved documents", documents = documents }
 
-update (SetActiveDocument id) state@{ documents : documents} = noEffects $ state
-  -- noEffects $ state { activeDocument = (getDocumentById id), status = "set active Document: " <> id }
+update (EditSelection snippet) state =
+  noEffects $ state { activeSnippet = snippet, status = "editting snipet"}
 
-update (CommitSnippets snippets) state = noEffects $ state
+update (CommitSnippetEdit snippet) state =
+  noEffects $ state { snippets = newsnippets, status = "commited snipt edits"} where
+    newsnippets = snoc state.snippets state.activeSnippet
 
-update (EditSnippets snippets) state = noEffects $ state
 
-update (DisplayError err) state = noEffects $ state
+-- | Html snippets / selected sections are passed by a document on select handler in the view
+update SaveDocumentChanges state@{ snippets : snippets } =
+  { state : state { status = "saving doc "}
+  , effects : [ do
+      res <- attempt $ post ("/api/docs/") (encodeJson $ (map encodeJson snippets)) -- to test
+      let decode r = decodeJson r.response :: Either String String
+      let saveStatus = either (Left <<< show) decode res
+      pure $ SaveDocumentStatus saveStatus
+    ]
+  }
+
+update (SaveDocumentStatus (Left err)) state =
+  { state : state { status = newStatus
+            , error = err }
+  , effects : [ do
+      pure $ DisplayError (newStatus <> " : " <> err)
+    ]
+  } where newStatus =  "Document failed to save, check network connection"
+
+update (SaveDocumentStatus (Right status)) state = noEffects $ state { status = "saved document", error = ""}
+
+update (DisplayError err) state = noEffects $ state { error = err }

@@ -8,10 +8,10 @@ import Prelude (bind, ($), pure, (==))
 
 
 newtype HtmlSnippet = HtmlSnippet
-  { id :: String
-  , text :: HtmlText
-  , classes :: String
-  , styles :: String
+  { id :: Maybe String
+  , text :: Maybe HtmlText
+  , classes :: Maybe String
+  , styles :: Maybe String
   }
 
 newtype Document = Document
@@ -33,16 +33,18 @@ type State =
   , activeDocument :: Maybe Document
   , error :: String
   , documents :: Documents
-  , sectionsInEditMode :: HtmlSnippets
+  , activeSnippet :: HtmlSnippet
+  , snippets :: HtmlSnippets
   , activeDocumentSections :: Pages
   }
 
 data Action
-  = EditSnippets HtmlSnippets
-  | CommitSnippets HtmlSnippets
+  = EditSelection HtmlSnippet
+  | CommitSnippetEdit HtmlSnippet
+  | SaveDocumentStatus (Either String String)
+  | SaveDocumentChanges
   | GetDocuments
   | RecieveDocuments  (Either String Documents)
-  | SetActiveDocument String
   | DisplayError String
 
 instance encodeJsonHtmlSnippet :: EncodeJson HtmlSnippet where
