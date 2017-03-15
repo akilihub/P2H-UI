@@ -1,6 +1,7 @@
 module Stage.State where
 
 import Control.Monad.Aff (attempt)
+import Control.Monad.Eff.Exception (message)
 import DOM (DOM)
 import Data.Argonaut (decodeJson, encodeJson)
 import Data.Array (snoc)
@@ -8,17 +9,10 @@ import Data.Either (Either(..), either)
 import Data.Functor (map)
 import Data.Maybe (Maybe(..))
 import Network.HTTP.Affjax (AJAX, get, post)
-import Prelude (bind, ($), (<>), pure, (<<<), show)
+import Prelude (bind, pure, show, ($), (<<<), (<>))
 import Pux (EffModel, noEffects)
-import Stage.Types (Action(..), Document(..), Documents, HtmlSnippet(..), State, getDocumentById)
+import Stage.Types (Action(..), HtmlSnippet(..), State, DocumentId)
 
-initDoc :: Document
-initDoc = Document
-  { name    : Nothing
-  , url     : Nothing
-  , id      : Nothing
-  , publicationStatus : Nothing
-  }
 
 initSnippet :: HtmlSnippet
 initSnippet = HtmlSnippet
@@ -31,36 +25,24 @@ initSnippet = HtmlSnippet
 init :: State
 init =
   { status : ".."
-  , userId : ""
-  , activeDocument : Just initDoc
+  , activeDocument : Nothing
   , error : ""
-  , documents : []
   , activeSnippet : initSnippet
   , snippets : []
   }
 
+getDocHtml :: Action -> Either String String
+getDocHtml (GetDocumentHtml (Just id)) = do
+  res <- attempt $ get ("/api/docs/" <> id)
+  case res of
+    (Left err)  -> Left message err
+    (Right r)   ->  Right r.response
+
+getDocHtml (GetDocumentHtml (Nothing)) = Left "No document id provided"
+
+getDocHtml _  = Left "used wrong Action type"
+
 update :: Action -> State -> EffModel State Action (dom :: DOM, ajax :: AJAX)
-update GetDocuments state =
-  { state   : state { status = "fetching documents" }
-  , effects : [ do
-      res <- attempt $ get ("/api/docs/" <> state.userId)
-      let decode r = decodeJson r.response :: Either String Documents
-      let documents = either (Left <<< show) decode res
-      pure $ RecieveDocuments documents
-    ]
-  }
-
-update (RecieveDocuments (Left err)) state =
-  { state : state { status = newStatus
-            , error = err }
-  , effects : [ do
-      pure $ DisplayError (newStatus <> " : " <> err)
-    ]
-  } where
-  newStatus =  "error getting documents check you are connected to the internet"
-
-update (RecieveDocuments (Right documents)) state =
-  noEffects $ state { status = "receieved documents", documents = documents }
 
 update (EditSelection snippet) state =
   noEffects $ state { activeSnippet = snippet, status = "editting snipet"}
@@ -68,10 +50,6 @@ update (EditSelection snippet) state =
 update (CommitSnippetEdit snippet) state =
   noEffects $ state { snippets = newsnippets, status = "commited snipt edits"} where
     newsnippets = snoc state.snippets state.activeSnippet
-
-update (SetActiveDocument id) state =
-  noEffects $ state { status = "started doc editing", activeDocument = newActiveDoc }
-    where newActiveDoc = getDocumentById id state.documents
 
 update SaveDocumentChanges state@{ snippets : snippets } =
   { state : state { status = "saving doc "}
@@ -94,3 +72,5 @@ update (SaveDocumentStatus (Left err)) state =
 update (SaveDocumentStatus (Right status)) state = noEffects $ state { status = "saved document", error = ""}
 
 update (DisplayError err) state = noEffects $ state { error = err }
+
+update (GetDocumentHtml id) state = noEffects $ state { activeDocument = Just id }

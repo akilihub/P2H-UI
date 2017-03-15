@@ -55,7 +55,7 @@ update (SignIn user) state =
         res <- attempt $ post "http://localhost:3001/api/login" (encodeJson user)
         case res of
           (Left err)  -> pure $ DisplayError (message err)
-          (Right json) -> case decodeJson json.response of
+          (Right r) -> case decodeJson r.response of
                           Right session -> pure $ AuthenticateUser session
                           Left err -> pure $ DisplayError err
       ]
