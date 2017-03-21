@@ -38,27 +38,12 @@ init =
 update :: Action -> State -> EffModel State Action (dom :: DOM, ajax :: AJAX)
 
 update (GetDocumentHtml (Just id)) state =
-  { state : state { activeDocument = Just id }
-  , effects : [ do
-      res <- attempt $ get ("/api/docs/" <> id)
-      case res of
-        (Left err)  -> pure $ DisplayError (message err)
-        (Right r)   -> pure $ RecieveDocumentHtml (r.response)
-    ]
-  }
-update (GetDocumentHtml (Nothing)) state =
-  { state : state { error = newError, status = newStatus}
-  , effects : [ do
-      pure $ DisplayError (newStatus <> " : " <> newError)
-    ]
-  } where newStatus = "couldnt retrieve document Id check internet connectedion"
-          newError = "Null document Id"
+  noEffects $ state { state : state { activeDocument = Just id }
 
-update (RecieveDocumentHtml html) state =
-  state `onlyEffects` [ do
-    dangerouslyInsertHml html
-    pure $ NoOp
-  ]
+update (GetDocumentHtml (Nothing)) state =
+  noEffects $ state { error = newError, status = newStatus} where
+    newStatus = "couldnt retrieve document Id check internet connectedion"
+    newError  = "Null document Id"
 
 update (EditSelection snippet) state =
   noEffects $ state { activeSnippet = snippet, status = "editting snipet"}
