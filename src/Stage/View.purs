@@ -14,11 +14,3 @@ view state = div
   [
 
   ]
-
-
-renderDocumentHtml :: State -> Html
--- renderDocuments state =
---   let response = getDocHtml (GetDocumentHtml state.activeDocumentId)
---   case response of
---     (Left error) ->
---     (Right htmlString) -> dangerouslySetInnerHTML htmlString

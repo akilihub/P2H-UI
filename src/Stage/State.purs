@@ -10,8 +10,9 @@ import Data.Functor (map)
 import Data.Maybe (Maybe(..))
 import Network.HTTP.Affjax (AJAX, get, post)
 import Prelude (bind, pure, show, ($), (<<<), (<>))
-import Pux (EffModel, noEffects)
-import Stage.Types (Action(..), HtmlSnippet(..), State, DocumentId)
+import Pux (EffModel, noEffects, onlyEffects)
+import Stage.Util(dangerouslyInsertHml)
+import Stage.Types (Action(..), DocumentId, HtmlSnippet(..), State)
 
 
 initSnippet :: HtmlSnippet
@@ -31,18 +32,33 @@ init =
   , snippets : []
   }
 
-getDocHtml :: Action -> Either String String
-getDocHtml (GetDocumentHtml (Just id)) = do
-  res <- attempt $ get ("/api/docs/" <> id)
-  case res of
-    (Left err)  -> Left message err
-    (Right r)   ->  Right r.response
 
-getDocHtml (GetDocumentHtml (Nothing)) = Left "No document id provided"
-
-getDocHtml _  = Left "used wrong Action type"
+-- insertHtml:: DomNode -> Eff (dom :: DOM) unit
 
 update :: Action -> State -> EffModel State Action (dom :: DOM, ajax :: AJAX)
+
+update (GetDocumentHtml (Just id)) state =
+  { state : state { activeDocument = Just id }
+  , effects : [ do
+      res <- attempt $ get ("/api/docs/" <> id)
+      case res of
+        (Left err)  -> pure $ DisplayError (message err)
+        (Right r)   -> pure $ RecieveDocumentHtml (r.response)
+    ]
+  }
+update (GetDocumentHtml (Nothing)) state =
+  { state : state { error = newError, status = newStatus}
+  , effects : [ do
+      pure $ DisplayError (newStatus <> " : " <> newError)
+    ]
+  } where newStatus = "couldnt retrieve document Id check internet connectedion"
+          newError = "Null document Id"
+
+update (RecieveDocumentHtml html) state =
+  state `onlyEffects` [ do
+    dangerouslyInsertHml html
+    pure $ NoOp
+  ]
 
 update (EditSelection snippet) state =
   noEffects $ state { activeSnippet = snippet, status = "editting snipet"}
@@ -73,4 +89,4 @@ update (SaveDocumentStatus (Right status)) state = noEffects $ state { status = 
 
 update (DisplayError err) state = noEffects $ state { error = err }
 
-update (GetDocumentHtml id) state = noEffects $ state { activeDocument = Just id }
+update NoOp s = noEffects $ s
